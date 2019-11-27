@@ -8,7 +8,9 @@ Simple single-file local web server
 - Safety feature: Only serves local connections unless given explicit command-line argument.
 - Safety feature: Refuses to serve directories outside home directory to remote connections.
 
-Install by copying `serve-http` into your project, or `npm i serve-http`
+Install by copying
+[`serve-http`](https://raw.githubusercontent.com/rsms/serve-http/master/serve-http)
+into your project, or [`npm i serve-http`](https://www.npmjs.com/package/serve-http)
 
 ```
 $ ./serve-http -help
