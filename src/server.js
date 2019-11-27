@@ -9,6 +9,7 @@ import livereloadJSBody from "../build/livereload-script"
 const createServer = require("http").createServer
 const urlparse = require("url").parse
 const Path = require("path")
+const os = require("os")
 const fs = require("fs")
 const promisify = require("util").promisify
 
@@ -66,8 +67,14 @@ export function startServer(opts) {
       let dir = Path.relative(".", pubdir)
       if (dir[0] != ".") {
         dir = "./" + dir
-      } else if (dir.startsWith("../")) {
+      } else if (dir == ".." || dir.startsWith("../")) {
         dir = pubdir
+        let homedir = os.homedir()
+        if (homedir == dir) {
+          dir = "~/"
+        } else if (homedir && dir.startsWith(homedir)) {
+          dir = "~" + dir.substr(homedir.length)
+        }
       }
       log(
         `serving %s%s at %s/`,
