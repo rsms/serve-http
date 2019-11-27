@@ -1,0 +1,32 @@
+{
+  "name": "serve-http",
+  "version": "1.0.0",
+  "description": "Simple single-file local web server with livereload",
+  "bin": {
+    "serve-http": "serve-http"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "serve-http",
+    "serve-http.map"
+  ],
+  "scripts": {
+    "build": "./build.sh -O",
+    "dev": "./build.sh -w"
+  },
+  "author": "Rasmus Andersson <https://rsms.me/>",
+  "homepage": "https://github.com/rsms/serve-http/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rsms/serve-http.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "google-closure-compiler": "^20191111.0.0",
+    "livereload": "^0.8.2",
+    "rollup": "^1.27.5",
+    "source-map-support": "^0.5.16",
+    "terser": "^4.4.0"
+  }
+}

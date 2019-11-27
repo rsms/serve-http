@@ -1,0 +1,8 @@
+.DS_Store
+*.g
+*.g.map
+*.sublime*
+report.*
+/node_modules
+/_*
+/build
