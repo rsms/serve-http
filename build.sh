@@ -69,6 +69,8 @@ if [ ! -f build/$PROGRAM.g ]; then
   chmod +x build/$PROGRAM.g
 fi
 
+# VERSION=$VERSION DEBUG=$DEBUG rollup -c misc/rollup.config.js
+
 rollup $ROLLUP_ARGS \
   -o build/$PROGRAM.g \
   --format cjs \
@@ -76,7 +78,7 @@ rollup $ROLLUP_ARGS \
   --no-freeze \
   --preferConst \
   --no-esModule \
-  --intro 'try { require("source-map-support").install() }catch(_){}; '"const VERSION='$VERSION',DEBUG=$DEBUG;" \
+  --intro 'try { require("source-map-support").install() }catch(_){}; '"const VERSION='$VERSION',DEBUG=$DEBUG,WITH_LIVERELOAD=true;" \
   --banner '#!/usr/bin/env node' \
   src/main.js
 
@@ -109,11 +111,14 @@ s = s.replace(/(?:^|\n\s*)\/\*(?:(?!\*\/).)*\*\//gms, s => {
   return s2
 })
 fs.writeFileSync("build/.${PROGRAM}.g.prep", s, "utf8")
+//let s2 = s.replace("WITH_LIVERELOAD=true", "WITH_LIVERELOAD=false")
+//fs.writeFileSync("build/.${PROGRAM}-without-livereload.g.prep", s2, "utf8")
 _JS
 
   if [[ "$CCOMPILER" == "" ]]; then
     CCOMPILER=$(node -e "process.stdout.write(require('google-closure-compiler/lib/utils').getNativeImagePath())")
   fi
+
   echo "closure-compiler build/.${PROGRAM}.g.prep -> $PROGRAM"
   $CCOMPILER \
     -O=SIMPLE \

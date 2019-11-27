@@ -12,6 +12,8 @@ Install by copying
 [`serve-http`](https://raw.githubusercontent.com/rsms/serve-http/master/serve-http)
 into your project, or [`npm i serve-http`](https://www.npmjs.com/package/serve-http)
 
+It may also be convenient to install it globally on your machine: `npm i -g serve-http`
+
 ```
 $ ./serve-http -help
 Usage: ./serve-http [options] [<dir>]

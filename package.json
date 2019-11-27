@@ -1,6 +1,6 @@
 {
   "name": "serve-http",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple single-file local web server with livereload",
   "bin": {
     "serve-http": "serve-http"
@@ -26,6 +26,8 @@
     "google-closure-compiler": "^20191111.0.0",
     "livereload": "^0.8.2",
     "rollup": "^1.27.5",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "source-map-support": "^0.5.16",
     "terser": "^4.4.0"
   }

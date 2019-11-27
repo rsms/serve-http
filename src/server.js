@@ -77,7 +77,7 @@ export function startServer(opts) {
       )
     }
 
-    if (!server.options.noLivereload && !port) {
+    if (WITH_LIVERELOAD && !server.options.noLivereload && !port) {
       startLivereloadServer(addr.port + 1, opts.host)
     }
 
@@ -92,7 +92,7 @@ export function startServer(opts) {
     // }, 100)
   })
 
-  if (!server.options.noLivereload && port) {
+  if (WITH_LIVERELOAD && !server.options.noLivereload && port) {
     startLivereloadServer(port + 10000, opts.host)
   }
 
@@ -101,14 +101,16 @@ export function startServer(opts) {
 
 
 function startLivereloadServer(port, bindHost) {
-  livereloadServer = createLivereloadServer({
-    port,
-    bindHost,
-  }, () => {
-    livereloadServer.watch(pubdir)
-    let addr = livereloadServer.address()
-    log(`livereload server listening on ws://${addr.address}:${addr.port}`)
-  })
+  if (WITH_LIVERELOAD) {
+    livereloadServer = createLivereloadServer({
+      port,
+      bindHost,
+    }, () => {
+      livereloadServer.watch(pubdir)
+      let addr = livereloadServer.address()
+      log(`livereload server listening on ws://${addr.address}:${addr.port}`)
+    })
+  }
 }
 
 
@@ -198,7 +200,7 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === "GET") {
-    if (livereloadServer && req.pathname == "/livereload.js") {
+    if (WITH_LIVERELOAD && livereloadServer && req.pathname == "/livereload.js") {
       return handleGETLivereload(req, res)
     }
     return handleGETFileRequest(req, res)
@@ -211,18 +213,20 @@ async function handleRequest(req, res) {
 let livereloadRes = null
 
 async function handleGETLivereload(req, res) {
-  if (!livereloadRes) {
-    let body = Buffer.from(livereloadJSBody, "utf8")
-    livereloadRes = {
-      body,
-      header: {
-        "Content-Type": "text/javascript",
-        "Content-Length": String(body.length),
+  if (WITH_LIVERELOAD) {
+    if (!livereloadRes) {
+      let body = Buffer.from(livereloadJSBody, "utf8")
+      livereloadRes = {
+        body,
+        header: {
+          "Content-Type": "text/javascript",
+          "Content-Length": String(body.length),
+        }
       }
     }
+    res.writeHead(200, livereloadRes.header)
+    res.end(livereloadRes.body)
   }
-  res.writeHead(200, livereloadRes.header)
-  res.end(livereloadRes.body)
 }
 
 

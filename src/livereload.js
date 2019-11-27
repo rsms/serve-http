@@ -31,8 +31,9 @@ const fs = require('fs')
     , url = require('url')
     , EventEmitter = require('events')
 
-const ws = require('ws')
-    , chokidar = require('chokidar')
+// import * as ws from '../node_modules/ws/index'
+// import { WebSocketServer } from '../node_modules/ws/lib/websocket-server'
+import { WebSocketServer } from './ws/websocket-server'
 
 let protocol_version = '7';
 let defaultPort = 35729;
@@ -88,11 +89,11 @@ export class Server extends EventEmitter {
     );
     if (this.config.server) {
       this.config.server.listen(this.config.port, this.config.bindHost);
-      this.server = new ws.Server({
+      this.server = new WebSocketServer({
         server: this.config.server
       });
     } else {
-      this.server = new ws.Server({
+      this.server = new WebSocketServer({
         port: this.config.port,
         host: this.config.bindHost,
       });
@@ -152,14 +153,12 @@ export class Server extends EventEmitter {
     return dlog(this, "Socket closed.");
   }
 
-  watch(paths) {
-    dlog(this, "Watching " + paths + "...");
-    return this.watcher = chokidar.watch(paths, {
-      ignoreInitial: true,
-      ignored: this.config.exclusions,
-      usePolling: this.config.usePolling
-    }).on('add', this.filterRefresh.bind(this)).on('change', this.filterRefresh.bind(this)).on('unlink', this.filterRefresh.bind(this));
-  };
+  watch(dir) {
+    dlog(this, "Watching " + dir + "...")
+    this.watcher = fs.watch(dir, { recursive: true }, (event, filename) => {
+      this.filterRefresh(filename)
+    })
+  }
 
   filterRefresh(filepath) {
     var delayedRefresh, exts, fileext;

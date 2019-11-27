@@ -12,7 +12,7 @@ function usage() {
     // common case: ./serve-http (in cwd)
     prog = progl
   }
-  console.log(`
+  let s = `
 Usage: ${prog} [options] [<dir>]
 
 <dir>
@@ -40,7 +40,11 @@ Examples:
     Serve current directory publicly on some available port,
     without directory listing.
 
-  `.trim()+"\n")
+  `.trim()+"\n"
+  if (!WITH_LIVERELOAD) {
+    s = s.replace(/^\s+livereload.+\n/g, "")
+  }
+  console.log(s)
   process.exit(0)
 }
 const opts = {
