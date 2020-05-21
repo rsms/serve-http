@@ -326,7 +326,7 @@ async function serveFile(req, res, filename, st) {
   const mimeType = (
     extToMimeType[Path.extname(filename).substr(1)] ||
     opts.defaultMimeType ||
-    isProbablyUTF8Text(body) ? "text/plain; charset=utf-8" : "application/octet-stream"
+    (isProbablyUTF8Text(body) ? "text/plain; charset=utf-8" : "application/octet-stream")
   )
 
   res.setHeader('Content-Type', mimeType)
