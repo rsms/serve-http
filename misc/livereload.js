@@ -88,7 +88,7 @@ module.exports = function (it) {
 };
 
 },{}],8:[function(require,module,exports){
-var core = module.exports = { version: '2.6.9' };
+var core = module.exports = { version: '2.6.11' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 },{}],9:[function(require,module,exports){
@@ -2035,11 +2035,9 @@ var _require = require('./protocol'),
     PROTOCOL_6 = _require.PROTOCOL_6,
     PROTOCOL_7 = _require.PROTOCOL_7;
 
-var VERSION = "3.1.0";
+var VERSION = "3.2.2";
 
-var Connector =
-/*#__PURE__*/
-function () {
+var Connector = /*#__PURE__*/function () {
   function Connector(options, WebSocket, Timer, handlers) {
     var _this = this;
 
@@ -2284,9 +2282,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var LessPlugin =
-/*#__PURE__*/
-function () {
+var LessPlugin = /*#__PURE__*/function () {
   function LessPlugin(window, host) {
     _classCallCheck(this, LessPlugin);
 
@@ -2397,9 +2393,7 @@ var _require4 = require('./reloader'),
 var _require5 = require('./protocol'),
     ProtocolError = _require5.ProtocolError;
 
-var LiveReload =
-/*#__PURE__*/
-function () {
+var LiveReload = /*#__PURE__*/function () {
   function LiveReload(window) {
     var _this = this;
 
@@ -2526,7 +2520,8 @@ function () {
         reloadMissingCSS: message.reloadMissingCSS != null ? message.reloadMissingCSS : true,
         originalPath: message.originalPath || '',
         overrideURL: message.overrideURL || '',
-        serverURL: "http://".concat(this.options.host, ":").concat(this.options.port)
+        serverURL: "http://".concat(this.options.host, ":").concat(this.options.port),
+        pluginOrder: this.options.pluginOrder
       });
     }
   }, {
@@ -2663,8 +2658,6 @@ require("core-js/modules/es7.symbol.async-iterator");
 
 require("core-js/modules/es6.symbol");
 
-require("core-js/modules/es6.regexp.split");
-
 require("core-js/modules/web.dom.iterable");
 
 require("core-js/modules/es6.regexp.match");
@@ -2672,6 +2665,8 @@ require("core-js/modules/es6.regexp.match");
 require("core-js/modules/es6.string.iterator");
 
 require("core-js/modules/es6.array.from");
+
+require("core-js/modules/es6.regexp.split");
 
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
@@ -2687,9 +2682,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var Options =
-/*#__PURE__*/
-function () {
+var Options = /*#__PURE__*/function () {
   function Options() {
     _classCallCheck(this, Options);
 
@@ -2702,6 +2695,15 @@ function () {
     this.mindelay = 1000;
     this.maxdelay = 60000;
     this.handshake_timeout = 5000;
+    var pluginOrder = [];
+    Object.defineProperty(this, 'pluginOrder', {
+      get: function get() {
+        return pluginOrder;
+      },
+      set: function set(v) {
+        pluginOrder.push.apply(pluginOrder, v.split(/[,;]/));
+      }
+    });
   }
 
   _createClass(Options, [{
@@ -2837,9 +2839,7 @@ var ProtocolError = function ProtocolError(reason, data) {
 
 ;
 
-var Parser =
-/*#__PURE__*/
-function () {
+var Parser = /*#__PURE__*/function () {
   function Parser(handlers) {
     _classCallCheck(this, Parser);
 
@@ -3003,6 +3003,10 @@ var splitUrl = function splitUrl(url) {
 };
 
 var pathFromUrl = function pathFromUrl(url) {
+  if (!url) {
+    return '';
+  }
+
   var path;
 
   var _splitUrl = splitUrl(url);
@@ -3096,9 +3100,7 @@ var IMAGE_STYLES = [{
   styleNames: ['borderImage', 'webkitBorderImage', 'MozBorderImage']
 }];
 
-var Reloader =
-/*#__PURE__*/
-function () {
+var Reloader = /*#__PURE__*/function () {
   function Reloader(window, console, Timer) {
     _classCallCheck(this, Reloader);
 
@@ -3125,6 +3127,11 @@ function () {
 
       if (!this.options.stylesheetReloadTimeout) {
         this.options.stylesheetReloadTimeout = 15000;
+      }
+
+      if (this.options.pluginOrder && this.options.pluginOrder.length) {
+        this.runPluginsByOrder(path, options);
+        return;
       }
 
       for (var _i = 0, _Array$from = Array.from(this.plugins); _i < _Array$from.length; _i++) {
@@ -3154,6 +3161,59 @@ function () {
       return this.reloadPage();
     }
   }, {
+    key: "runPluginsByOrder",
+    value: function runPluginsByOrder(path, options) {
+      var _this = this;
+
+      options.pluginOrder.some(function (pluginId) {
+        if (pluginId === 'css') {
+          if (options.liveCSS && path.match(/\.css(?:\.map)?$/i)) {
+            if (_this.reloadStylesheet(path)) {
+              return true;
+            }
+          }
+        }
+
+        if (pluginId === 'img') {
+          if (options.liveImg && path.match(/\.(jpe?g|png|gif)$/i)) {
+            _this.reloadImages(path);
+
+            return true;
+          }
+        }
+
+        if (pluginId === 'extension') {
+          if (options.isChromeExtension) {
+            _this.reloadChromeExtension();
+
+            return true;
+          }
+        }
+
+        if (pluginId === 'others') {
+          _this.reloadPage();
+
+          return true;
+        }
+
+        if (pluginId === 'external') {
+          return _this.plugins.some(function (plugin) {
+            if (plugin.reload && plugin.reload(path, options)) {
+              return true;
+            }
+          });
+        }
+
+        return _this.plugins.filter(function (plugin) {
+          return plugin.constructor.identifier === pluginId;
+        }).some(function (plugin) {
+          if (plugin.reload && plugin.reload(path, options)) {
+            return true;
+          }
+        });
+      });
+    }
+  }, {
     key: "reloadPage",
     value: function reloadPage() {
       return this.window.document.location.reload();
@@ -3166,7 +3226,7 @@ function () {
   }, {
     key: "reloadImages",
     value: function reloadImages(path) {
-      var _this = this;
+      var _this2 = this;
 
       var img;
       var expando = this.generateUniqueString();
@@ -3213,7 +3273,7 @@ function () {
 
       if (this.document.styleSheets) {
         return Array.from(this.document.styleSheets).map(function (styleSheet) {
-          return _this.reloadStylesheetImages(styleSheet, path, expando);
+          return _this2.reloadStylesheetImages(styleSheet, path, expando);
         });
       }
     }
@@ -3274,7 +3334,7 @@ function () {
   }, {
     key: "reloadStyleImages",
     value: function reloadStyleImages(style, styleNames, path, expando) {
-      var _this2 = this;
+      var _this3 = this;
 
       var _iteratorNormalCompletion4 = true;
       var _didIteratorError4 = false;
@@ -3288,7 +3348,7 @@ function () {
           if (typeof value === 'string') {
             var newValue = value.replace(new RegExp('\\burl\\s*\\(([^)]*)\\)'), function (match, src) {
               if (pathsMatch(path, pathFromUrl(src))) {
-                return "url(".concat(_this2.generateCacheBustUrl(src, expando), ")");
+                return "url(".concat(_this3.generateCacheBustUrl(src, expando), ")");
               } else {
                 return match;
               }
@@ -3317,7 +3377,7 @@ function () {
   }, {
     key: "reloadStylesheet",
     value: function reloadStylesheet(path) {
-      var _this3 = this;
+      var _this4 = this;
 
       // has to be a real array, because DOMNodeList will be modified
       var style;
@@ -3326,7 +3386,7 @@ function () {
       var links = function () {
         var result = [];
 
-        for (var _i5 = 0, _Array$from5 = Array.from(_this3.document.getElementsByTagName('link')); _i5 < _Array$from5.length; _i5++) {
+        for (var _i5 = 0, _Array$from5 = Array.from(_this4.document.getElementsByTagName('link')); _i5 < _Array$from5.length; _i5++) {
           link = _Array$from5[_i5];
 
           if (link.rel.match(/^stylesheet$/i) && !link.__LiveReload_pendingRemoval) {
@@ -3362,8 +3422,8 @@ function () {
       }
 
       this.console.log("LiveReload found ".concat(links.length, " LINKed stylesheets, ").concat(imported.length, " @imported stylesheets"));
-      var match = pickBestMatch(path, links.concat(imported), function (l) {
-        return pathFromUrl(_this3.linkHref(l));
+      var match = pickBestMatch(path, links.concat(imported), function (link) {
+        return pathFromUrl(_this4.linkHref(link));
       });
 
       if (match) {
@@ -3429,7 +3489,7 @@ function () {
   }, {
     key: "waitUntilCssLoads",
     value: function waitUntilCssLoads(clone, func) {
-      var _this4 = this;
+      var _this5 = this;
 
       var callbackExecuted = false;
 
@@ -3446,9 +3506,9 @@ function () {
 
 
       clone.onload = function () {
-        _this4.console.log('LiveReload: the new stylesheet has finished loading');
+        _this5.console.log('LiveReload: the new stylesheet has finished loading');
 
-        _this4.knownToSupportCssOnLoad = true;
+        _this5.knownToSupportCssOnLoad = true;
         return executeCallback();
       };
 
@@ -3458,11 +3518,11 @@ function () {
 
         (_poll = function poll() {
           if (clone.sheet) {
-            _this4.console.log('LiveReload is polling until the new CSS finishes loading...');
+            _this5.console.log('LiveReload is polling until the new CSS finishes loading...');
 
             return executeCallback();
           } else {
-            return _this4.Timer.start(50, _poll);
+            return _this5.Timer.start(50, _poll);
           }
         })();
       } // fail safe
@@ -3474,12 +3534,12 @@ function () {
     key: "linkHref",
     value: function linkHref(link) {
       // prefixfree uses data-href when it turns LINK into STYLE
-      return link.href || link.getAttribute('data-href');
+      return link.href || link.getAttribute && link.getAttribute('data-href');
     }
   }, {
     key: "reattachStylesheetLink",
     value: function reattachStylesheetLink(link) {
-      var _this5 = this;
+      var _this6 = this;
 
       // ignore LINKs that will be removed by LR soon
       var clone;
@@ -3519,21 +3579,21 @@ function () {
           additionalWaitingTime = 200;
         }
 
-        return _this5.Timer.start(additionalWaitingTime, function () {
+        return _this6.Timer.start(additionalWaitingTime, function () {
           if (!link.parentNode) {
             return;
           }
 
           link.parentNode.removeChild(link);
           clone.onreadystatechange = null;
-          return _this5.window.StyleFix ? _this5.window.StyleFix.link(clone) : undefined;
+          return _this6.window.StyleFix ? _this6.window.StyleFix.link(clone) : undefined;
         });
       }); // prefixfree
     }
   }, {
     key: "reattachImportedRule",
     value: function reattachImportedRule(_ref) {
-      var _this6 = this;
+      var _this7 = this;
 
       var rule = _ref.rule,
           index = _ref.index,
@@ -3573,7 +3633,7 @@ function () {
         rule = parent.cssRules[index];
         rule.__LiveReload_newHref = href; // repeat again for good measure
 
-        return _this6.Timer.start(_this6.importCacheWaitPeriod, function () {
+        return _this7.Timer.start(_this7.importCacheWaitPeriod, function () {
           // if another reattachImportedRule call is in progress, abandon this one
           if (rule.__LiveReload_newHref !== href) {
             return;
@@ -3672,9 +3732,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var Timer =
-/*#__PURE__*/
-function () {
+var Timer = /*#__PURE__*/function () {
   function Timer(func) {
     var _this = this;
 
