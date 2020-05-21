@@ -1,5 +1,5 @@
 import { parseopts } from "./parseopts"
-import { startServer } from "./server"
+import { createServer } from "./server"
 import { die, dlog } from "./util"
 
 const Path = require("path")
@@ -56,12 +56,6 @@ const opts = {
   version: false,
   noLivereload: false,
   noDirlist: false,  // disable directory listing
-
-  pubdir: ".",
-  defaultMimeType: "application/octet-stream",
-  expireImmediately: false,  // include distant-past "Expires" response header
-  indexFilename: "index.html",
-  dirlistShowHidden: false,  // include files starting with "." in directory listing
 }
 
 function main() {
@@ -72,22 +66,36 @@ function main() {
     process.exit(0)
   }
 
-  opts.port = opts.port || opts.p
-
-  // dlog({ opts, args })
-
+  let pubdir = ""
   if (args.length > 0) {
     if (args.length > 1) {
       console.error(`ignoring extra arguments: ${args.slice(1).join(" ")}`)
     }
-    opts.pubdir = args[0]
+    pubdir = args[0]
   }
 
   if (opts.public && opts.host == "localhost") {
     opts.host = ""
   }
 
-  startServer(opts)
+  createServer({
+    port: opts.port || opts.p,
+    host: opts.host,
+    public: opts.public,
+    quiet: opts.quiet,
+    pubdir,
+    dirlist: {
+      disable: opts.noDirlist,
+      showHidden: opts.dirlistShowHidden,
+    },
+    livereload: {
+      disable: opts.noLivereload,
+    },
+  })
 }
 
-main()
+if (module.id == ".") {
+  main()
+} else {
+  exports.createServer = createServer
+}

@@ -6,7 +6,7 @@ import { createDirectoryListingHTML } from "./dirlist"
 import { createServer as createLivereloadServer } from "./livereload"
 import livereloadJSBody from "../build/livereload-script"
 
-const createServer = require("http").createServer
+const createHttpServer = require("http").createServer
 const urlparse = require("url").parse
 const Path = require("path")
 const os = require("os")
@@ -22,8 +22,20 @@ let livereloadServer = null
 let log = ()=>{}
 
 
-export function startServer(opts) {
-  pubdir = Path.resolve(opts.pubdir)
+export function createServer(opts) {
+  opts = opts ? Object.assign({}, opts) : {} // copy
+  opts.host = opts.host || (opts.public ? "" : "localhost")
+  opts.port = opts.port && opts.port > 0 ? opts.port : undefined
+  opts.livereload = (
+    opts.livereload && typeof opts.livereload == "object" ? opts.livereload :
+    { disable: opts.livereload !== undefined && !opts.livereload }
+  )
+  opts.dirlist = (
+    opts.dirlist && typeof opts.dirlist == "object" ? opts.dirlist :
+    { disable: opts.dirlist !== undefined && !opts.dirlist }
+  )
+
+  pubdir = Path.resolve(opts.pubdir || ".")
   try {
     pubdir = fs.realpathSync(pubdir)
   } catch (err) {
@@ -43,7 +55,7 @@ export function startServer(opts) {
     return endResponse(res, 500, `Internal server error: ${err}`)
   })
 
-  server = createServer(handler2)
+  server = createHttpServer(handler2)
   server.options = opts
 
   if (!opts.quiet) {
@@ -53,14 +65,17 @@ export function startServer(opts) {
   server.localOnly = true
   if (opts.host != "localhost" && opts.host != "127.0.0.1" && opts.host != "::1") {
     server.localOnly = false
-    let msg = checkSafePubdir(pubdir)
-    if (msg) {
-      die("refusing to allow external connections for security reasons: " + msg)
+    if (!opts.public) {
+      let msg = checkSafePubdir(pubdir)
+      if (msg) {
+        die("Refusing to allow external connections for security reasons:\n  " +
+            msg.replace(/\.$/,".") + "." +
+            "\n  Set -public to ignore this safeguard. Please be careful.")
+      }
     }
   }
 
-  let port = opts.port < 1 ? undefined : opts.port
-  server.listen(port, opts.host, () => {
+  server.listen(opts.port, opts.host, () => {
     let addr = server.address()
 
     if (!opts.quiet) {
@@ -82,9 +97,12 @@ export function startServer(opts) {
         server.localOnly ? "" : " PUBLICLY TO THE INTERNET",
         addrToURL(addr)
       )
+    } else if (!opts.port) {
+      // print auto-assigned port when quiet
+      console.log(addr.port)
     }
 
-    if (WITH_LIVERELOAD && !server.options.noLivereload && !port) {
+    if (WITH_LIVERELOAD && !opts.livereload.disable && !opts.livereload.port && !opts.port) {
       startLivereloadServer(addr.port + 1, opts.host)
     }
 
@@ -99,8 +117,8 @@ export function startServer(opts) {
     // }, 100)
   })
 
-  if (WITH_LIVERELOAD && !server.options.noLivereload && port) {
-    startLivereloadServer(port + 10000, opts.host)
+  if (WITH_LIVERELOAD && !opts.livereload.disable && (opts.livereload.port || opts.port)) {
+    startLivereloadServer(opts.livereload.port || (opts.port + 10000), opts.host)
   }
 
   return server
@@ -206,7 +224,7 @@ async function handleRequest(req, res) {
     return handlePOSTFileRequest(req, res)
   }
 
-  if (req.method === "GET") {
+  if (req.method === "GET" || req.method === "HEAD") {
     if (WITH_LIVERELOAD && livereloadServer && req.pathname == "/livereload.js") {
       return handleGETLivereload(req, res)
     }
@@ -287,25 +305,44 @@ async function handlePOSTFileRequest(req, res) {
 }
 
 
+function isProbablyUTF8Text(buf) {
+  for (let i = 0; i < Math.min(4096, buf.length); i++) {
+    let b = buf[i]
+    if (b <= 0x08) { return false }
+    if (b >= 0x80 && ((b >> 5) != 0x6 || (b >> 4) != 0xe || (b >> 3) != 0x1e)) {
+      return false  // not UTF-8
+    }
+  }
+  return true
+}
+
+
 async function serveFile(req, res, filename, st) {
   const opts = server.options
   res.statusCode = 200
 
-  let mimeType = extToMimeType[Path.extname(filename).substr(1)] || opts.defaultMimeType
+  let body = await readfile(filename)
+
+  const mimeType = (
+    extToMimeType[Path.extname(filename).substr(1)] ||
+    opts.defaultMimeType ||
+    isProbablyUTF8Text(body) ? "text/plain; charset=utf-8" : "application/octet-stream"
+  )
+
   res.setHeader('Content-Type', mimeType)
   res.setHeader('Last-Modified', st.mtime.toUTCString())
   res.setHeader('ETag', etag(st))
-  if (opts.expireImmediately) {
-    res.setHeader('Expires', 'Sun, 11 Mar 1984 12:00:00 GMT')
-  }
-
-  let body = await readfile(filename)
 
   if (mimeType == "text/html" && !opts.nolivereload) {
     body = preprocessHtml(body)
   }
 
   res.setHeader('Content-Length', body.length)
+
+  if (req.method == "HEAD") {
+    res.end()
+    return
+  }
 
   if (opts.emulateSlowConnection) {
     let chunkTime = 1000 // Stream each file out over a second
@@ -330,14 +367,15 @@ async function serveFile(req, res, filename, st) {
 async function serveDir(req, res, filename, st) {
   dlog("serveDir %r", req.pathname)
   const opts = server.options
+  const indexFilename = opts.indexFilename || "index.html"
 
-  let indexFile = Path.join(filename, opts.indexFilename)
+  let indexFile = Path.join(filename, indexFilename)
   let indexFileSt = await stat(indexFile)
   if (indexFileSt && indexFileSt.isFile()) {
     return serveFile(req, res, indexFile, indexFileSt)
   }
 
-  if (opts.noDirlist) {
+  if (opts.dirlist.disable) {
     return replyNotFound(req, res)
   }
 
@@ -352,14 +390,14 @@ async function serveDir(req, res, filename, st) {
     return
   }
 
-  let body = await createDirectoryListingHTML(filename, req.pathname, opts)
+  let body = await createDirectoryListingHTML(filename, req.pathname, opts.dirlist)
   body = Buffer.from(body, "utf8")
   res.writeHead(200, {
     "Expires": "Sun, 11 Mar 1984 12:00:00 GMT",
     "Content-Type": "text/html",
     "Content-Length": String(body.length),
   })
-  res.end(body)
+  res.end(req.method == "HEAD" ? undefined : body)
 }
 
 

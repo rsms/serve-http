@@ -44,3 +44,16 @@ Examples:
     without directory listing.
 
 ```
+
+## JavaScript API
+
+serve-http can also be used as a library:
+
+```js
+const { createServer } = require("serve-http")
+const server = createServer({ pubdir: __dirname, port: 1234 })
+// `server` is a standard nodejs http server instance.
+```
+
+See TypeScript type definitions for documentation of the API:
+[`serve-http.d.ts`](serve-http.d.ts)

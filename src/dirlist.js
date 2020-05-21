@@ -19,13 +19,13 @@ function htmlescape(s) {
 }
 
 
-export async function createDirectoryListingHTML(filename, friendlyName, opts) {
+// f(filename :string, pathname :string, opts :DirlistOptions) :Promise<string>
+export async function createDirectoryListingHTML(filename, pathname, opts) {
   let ents = await readdir(filename, {withFileTypes:true, encoding:"utf8"})
   let files = []
   for (let f of ents) {
     let name = f.name
-    if (!opts.dirlistShowHidden && name[0] == ".") {
-      files.push(`<!-- Hidden file: ${htmlescape(name)} -->`)
+    if (!opts.showHidden && name[0] == ".") {
       continue
     }
 
@@ -39,20 +39,27 @@ export async function createDirectoryListingHTML(filename, friendlyName, opts) {
       } catch (_) {}
     }
 
-    let pathname = encodeURI(friendlyName + name)
-    files.push(`<li><a href="${pathname}">${htmlescape(name)}</a>${extra}</li>`)
+    files.push(`<li><a href="${encodeURI(pathname + name)}">${htmlescape(name)}</a>${extra}</li>`)
   }
 
-  if (friendlyName != '/') {
+  if (pathname != '/') {
     files.unshift('<li><a href="..">..</a></li>')
   }
 
-  let title = htmlescape(friendlyName)
+  let title = []
+  let pathComponents = pathname.split("/").filter(s => s.length > 0)
+  let pardir = "/"
+  for (let c of pathComponents) {
+    let dir = pardir + c + "/"
+    pardir = dir
+    title.push(`<a href="${htmlescape(dir)}">${htmlescape(c)}</a>`)
+  }
+  title = `<a href="/">/</a>${title.join("/")}`
 
   return `<!DOCTYPE html>
 <html>
   <meta charset="utf-8">
-  <title>${title}</title>
+  <title>${htmlescape(pathname)}</title>
   <style>
     body { font-family:monospace; line-height:1.4; padding:2em }
     ul { list-style:none;padding:0 }

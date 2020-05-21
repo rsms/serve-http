@@ -1,18 +1,21 @@
 {
   "name": "serve-http",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Simple single-file local web server with livereload",
   "bin": {
-    "serve-http": "serve-http"
+    "serve-http": "serve-http.js"
   },
+  "main": "serve-http.js",
+  "typings": "serve-http.d.ts",
   "files": [
     "LICENSE",
     "README.md",
-    "serve-http",
-    "serve-http.map"
+    "serve-http.js",
+    "serve-http.js.map",
+    "serve-http.d.ts"
   ],
   "scripts": {
-    "build": "./build.sh -O",
+    "build": "./build.sh",
     "dev": "./build.sh -w"
   },
   "author": "Rasmus Andersson <https://rsms.me/>",

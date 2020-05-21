@@ -1,4 +1,7 @@
 #!/bin/bash -e
+# usage: build.sh -w  -- build debug and watch
+# usage: build.sh -g  -- build debug
+# usage: build.sh     -- build release
 cd "$(dirname "$0")"
 
 export PATH=$PWD/node_modules/.bin:$PATH
@@ -64,15 +67,15 @@ fi
 # ----------------------------------------------------------------------------
 # build program
 
-if [ ! -f build/$PROGRAM.g ]; then
-  touch build/$PROGRAM.g
-  chmod +x build/$PROGRAM.g
+if [ ! -f build/$PROGRAM.g.js ]; then
+  touch build/$PROGRAM.g.js
+  chmod +x build/$PROGRAM.g.js
 fi
 
 # VERSION=$VERSION DEBUG=$DEBUG rollup -c misc/rollup.config.js
 
 rollup $ROLLUP_ARGS \
-  -o build/$PROGRAM.g \
+  -o build/$PROGRAM.g.js \
   --format cjs \
   --sourcemap \
   --no-freeze \
@@ -86,7 +89,7 @@ rollup $ROLLUP_ARGS \
 #   --ecma 8 \
 #   --beautify 'ecma=8,indent_level=2,keep_quoted_props=true,width=100,comments="all"' \
 #   -d DEBUG=false \
-#   -- build/$PROGRAM.g > $PROGRAM.g
+#   -- build/$PROGRAM.g.js > $PROGRAM.g.js
 
 # ----------------------------------------------------------------------------
 # post processing
@@ -94,10 +97,10 @@ rollup $ROLLUP_ARGS \
 if ! $DEBUG; then
 
 # strip comments
-echo "strip-comments build/$PROGRAM.g -> build/.$PROGRAM.g.prep"
+echo "strip-comments build/$PROGRAM.g.js -> build/.$PROGRAM.g.js.prep"
 node <<_JS
 let fs = require('fs')
-let s = fs.readFileSync("build/${PROGRAM}.g", "utf8")
+let s = fs.readFileSync("build/${PROGRAM}.g.js", "utf8")
 // replace with whitespace and linebreaks to not mess up sourcemap
 s = s.replace(/(?:^|\n\s*)\/\*(?:(?!\*\/).)*\*\//gms, s => {
   let s2 = ""
@@ -110,20 +113,20 @@ s = s.replace(/(?:^|\n\s*)\/\*(?:(?!\*\/).)*\*\//gms, s => {
   }
   return s2
 })
-fs.writeFileSync("build/.${PROGRAM}.g.prep", s, "utf8")
+fs.writeFileSync("build/.${PROGRAM}.g.js.prep", s, "utf8")
 //let s2 = s.replace("WITH_LIVERELOAD=true", "WITH_LIVERELOAD=false")
-//fs.writeFileSync("build/.${PROGRAM}-without-livereload.g.prep", s2, "utf8")
+//fs.writeFileSync("build/.${PROGRAM}-without-livereload.g.js.prep", s2, "utf8")
 _JS
 
   if [[ "$CCOMPILER" == "" ]]; then
     CCOMPILER=$(node -e "process.stdout.write(require('google-closure-compiler/lib/utils').getNativeImagePath())")
   fi
 
-  echo "closure-compiler build/.${PROGRAM}.g.prep -> $PROGRAM"
+  echo "closure-compiler build/.${PROGRAM}.g.js.prep -> ${PROGRAM}.js"
   $CCOMPILER \
     -O=SIMPLE \
-    --js=build/.${PROGRAM}.g.prep \
-    --js_output_file=$PROGRAM \
+    "--js=build/.${PROGRAM}.g.js.prep" \
+    "--js_output_file=${PROGRAM}.js" \
     -W QUIET \
     --language_in=ECMASCRIPT_2018 \
     --language_out=ECMASCRIPT_2018 \
@@ -133,12 +136,12 @@ _JS
     --module_resolution=NODE \
     --package_json_entry_names=esnext:main,browser,main \
     --assume_function_wrapper \
-    --create_source_map=$PROGRAM.map \
-    --source_map_input="build/.${PROGRAM}.g.prep|build/$PROGRAM.g.map" \
+    "--create_source_map=$PROGRAM.js.map" \
+    --source_map_input="build/.${PROGRAM}.g.js.prep|build/$PROGRAM.g.js.map" \
     \
     --charset=UTF-8 \
-    --output_wrapper="$(printf "#!/usr/bin/env node\n// $HEADER_COMMENT\n%%output%%\n//#sourceMappingURL=$PROGRAM.map")"
+    --output_wrapper="$(printf "#!/usr/bin/env node\n// $HEADER_COMMENT\n%%output%%\n//#sourceMappingURL=$PROGRAM.js.map")"
 
-  rm build/.${PROGRAM}.g.prep
-  chmod +x $PROGRAM
+  rm build/.${PROGRAM}.g.js.prep
+  chmod +x $PROGRAM.js
 fi
