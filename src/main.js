@@ -97,5 +97,5 @@ function main() {
 if (module.id == ".") {
   main()
 } else {
-  exports.createServer = createServer
+  module.exports = { createServer }
 }

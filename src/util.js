@@ -1,6 +1,6 @@
 import { fmt } from "./fmt"
-import * as os from "os"
 
+const os = require("os")
 const fs = require("fs")
 
 
