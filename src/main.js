@@ -22,7 +22,8 @@ Options:
   -p, -port <port>  Listen on specific <port>
   -host <host>      Bind to <host> instead of "localhost"
   -public           Accept connections from anywhere (same as -host "")
-  -quiet            Disable request logging
+  -quiet            Disable all logging
+  -no-log           Disable request logging (still prints "serving ...")
   -no-livereload    Disable livereload
   -no-dirlist       Disable directory listing
   -h, -help         Show help and exit
@@ -53,9 +54,10 @@ const opts = {
   host: "localhost",
   public: false,
   quiet: false,
-  version: false,
+  noLog: false,
   noLivereload: false,
   noDirlist: false,  // disable directory listing
+  version: false,
 }
 
 function main() {
@@ -83,6 +85,7 @@ function main() {
     host: opts.host,
     public: opts.public,
     quiet: opts.quiet,
+    logRequests: !opts.noLog,
     pubdir,
     dirlist: {
       disable: opts.noDirlist,

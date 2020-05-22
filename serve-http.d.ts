@@ -6,6 +6,7 @@ export interface ServerConfig {
   public?          :boolean // bind to public address; make server accessible to the outside world.
   pubdir?          :string  // directory to serve. (default "."; current directory.)
   quiet?           :boolean // don't log anything but errors.
+  logRequests?     :boolean // log HTTP requests (ignored if quiet=true)
   defaultMimeType? :string  // mime type for unknown file types.
   indexFilename?   :string  // file to serve for directory requests (def. "index.html")
   dirlist?         :DirlistOptions|boolean

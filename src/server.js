@@ -46,7 +46,7 @@ export function createServer(opts) {
   }
 
   let handler = formHandlerChain([
-    !opts.quiet && requestLogger(),
+    (opts.logRequests && !opts.quiet) && requestLogger(),
     handleRequest,
   ])
 
@@ -83,7 +83,8 @@ export function createServer(opts) {
     if (WITH_LIVERELOAD && !opts.livereload.disable) {
       lrport = (
         opts.livereload.port ? opts.livereload.port :
-        opts.port ? opts.port + 10000 :
+        opts.port ? Math.min(65535, opts.port + 10000) :
+        addr.port >= 65535 ? addr.port - 1 :
         addr.port + 1
       )
       startLivereloadServer(lrport, opts.host)
