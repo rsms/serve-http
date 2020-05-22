@@ -78,6 +78,17 @@ export function createServer(opts) {
   server.listen(opts.port, opts.host, () => {
     let addr = server.address()
 
+    // livereload port
+    let lrport = 0
+    if (WITH_LIVERELOAD && !opts.livereload.disable) {
+      lrport = (
+        opts.livereload.port ? opts.livereload.port :
+        opts.port ? opts.port + 10000 :
+        addr.port + 1
+      )
+      startLivereloadServer(lrport, opts.host)
+    }
+
     if (!opts.quiet) {
       let dir = Path.relative(".", pubdir)
       if (dir[0] != ".") {
@@ -91,8 +102,9 @@ export function createServer(opts) {
           dir = "~" + dir.substr(homedir.length)
         }
       }
+      let lrmsg = lrport ? ` (livereload on :${lrport})` : ""
       log(
-        `serving %s%s at %s/`,
+        `serving %s%s at %s/${lrmsg}`,
         dir,
         server.localOnly ? "" : " PUBLICLY TO THE INTERNET",
         addrToURL(addr)
@@ -100,10 +112,6 @@ export function createServer(opts) {
     } else if (!opts.port) {
       // print auto-assigned port when quiet
       console.log(addr.port)
-    }
-
-    if (WITH_LIVERELOAD && !opts.livereload.disable && !opts.livereload.port && !opts.port) {
-      startLivereloadServer(addr.port + 1, opts.host)
     }
 
     // DEBUG && setTimeout(() => {
@@ -117,10 +125,6 @@ export function createServer(opts) {
     // }, 100)
   })
 
-  if (WITH_LIVERELOAD && !opts.livereload.disable && (opts.livereload.port || opts.port)) {
-    startLivereloadServer(opts.livereload.port || (opts.port + 10000), opts.host)
-  }
-
   return server
 }
 
@@ -132,8 +136,6 @@ function startLivereloadServer(port, bindHost) {
       bindHost,
     }, () => {
       livereloadServer.watch(pubdir)
-      let addr = livereloadServer.address()
-      log(`livereload server listening on ws://${addr.address}:${addr.port}`)
     })
   }
 }
