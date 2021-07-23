@@ -30,6 +30,7 @@ const fs = require('fs')
     , https = require('https')
     , url = require('url')
     , EventEmitter = require('events')
+    , watch = require('node-watch');
 
 // import * as ws from '../node_modules/ws/index'
 // import { WebSocketServer } from '../node_modules/ws/lib/websocket-server'
@@ -155,7 +156,7 @@ export class Server extends EventEmitter {
 
   watch(dir) {
     dlog(this, "Watching " + dir + "...")
-    this.watcher = fs.watch(dir, { recursive: true }, (event, filename) => {
+    this.watcher = watch(dir, { recursive: true }, (event, filename) => {
       this.filterRefresh(filename)
     })
   }

@@ -33,5 +33,8 @@
     "rollup-plugin-node-resolve": "^5.2.0",
     "source-map-support": "^0.5.16",
     "terser": "^4.4.0"
+  },
+  "dependencies": {
+    "node-watch": "^0.7.1"
   }
 }
