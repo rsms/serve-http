@@ -12,6 +12,7 @@ function usage() {
     // common case: ./serve-http (in cwd)
     prog = progl
   }
+  prog = Path.basename(prog)
   let s = `
 Usage: ${prog} [options] [<dir>]
 
