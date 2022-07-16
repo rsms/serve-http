@@ -1,27 +1,52 @@
 import { Server } from "http"
 
 export interface ServerConfig {
-  port?            :number  // bind to port. If falsy, some free user-space port is assigned.
-  host?            :string  // bind to host (default "localhost")
-  public?          :boolean // bind to public address; make server accessible to the outside world.
-  pubdir?          :string  // directory to serve. (default "."; current directory.)
-  quiet?           :boolean // don't log anything but errors.
-  logRequests?     :boolean // log HTTP requests (ignored if quiet=true)
-  defaultMimeType? :string  // mime type for unknown file types.
-  indexFilename?   :string  // file to serve for directory requests (def. "index.html")
-  dirlist?         :DirlistOptions|boolean
-  livereload?      :LiveReloadOptions|boolean
+  /// bind to port. If falsy, some free user-space port is assigned
+  port? :number
+
+  /// bind to host (defaults to "localhost")
+  host? :string
+
+  // bind to public address; make server accessible to the outside world
+  public? :boolean
+
+  /// directory to serve. (default "."; current directory.)
+  pubdir? :string
+
+  /// don't log requests (still logs errors)
+  quiet? :boolean
+
+  /// log "serving DIR at URL" message on startup
+  showServingMessage? :boolean
+
+  /// mime type for unknown file types
+  defaultMimeType?    :string
+
+  /// file to serve for directory requests (defaults to "index.html")
+  indexFilename? :string
+
+  /// disable or customize directory listing
+  dirlist? :DirlistOptions|boolean
+
+  /// disable or customize livereload
+  livereload? :LiveReloadOptions|boolean
 }
 
 export interface DirlistOptions {
-  disable?    :boolean  // disable directory listing.
-  showHidden? :boolean  // include files which name starts with "."
+  /// disable directory listing
+  disable? :boolean
+
+  /// include files which name starts with "."
+  showHidden? :boolean
 }
 
 export interface LiveReloadOptions {
-  disable? :boolean  // disable live reload
-  port?    :number   // livereload server bind port. (default based on server port)
+  /// disable livereload
+  disable? :boolean
+
+  /// livereload server bind port. (default based on server port)
+  port? :number
 }
 
-// Start a server
+/// Start a server
 export function createServer(config? :ServerConfig) :Server

@@ -23,10 +23,10 @@ Options:
   -p, -port <port>  Listen on specific <port>
   -host <host>      Bind to <host> instead of "localhost"
   -public           Accept connections from anywhere (same as -host "")
-  -quiet            Disable all logging
-  -no-log           Disable request logging (still prints "serving ...")
+  -q, -quiet        Don't log requests
   -no-livereload    Disable livereload
   -no-dirlist       Disable directory listing
+  -dirlist-hidden   Show files beginning with "." in directory listings
   -h, -help         Show help and exit
   -version          Print version to stdout and exit
 
@@ -49,15 +49,16 @@ Examples:
   console.log(s)
   process.exit(0)
 }
+
 const opts = {
   // available command-line options with default values
   port: 0, p: 0,
   host: "localhost",
   public: false,
-  quiet: false,
-  noLog: false,
+  q: false, quiet: false,
   noLivereload: false,
   noDirlist: false,  // disable directory listing
+  dirlistHidden: false,
   version: false,
 }
 
@@ -81,20 +82,30 @@ function main() {
     opts.host = ""
   }
 
-  createServer({
+  opts.quiet = opts.quiet || opts.q
+
+  const server = createServer({
     port: opts.port || opts.p,
     host: opts.host,
     public: opts.public,
     quiet: opts.quiet,
-    logRequests: !opts.noLog,
+    showServingMessage: true,
     pubdir,
     dirlist: {
       disable: opts.noDirlist,
-      showHidden: opts.dirlistShowHidden,
+      showHidden: opts.dirlistHidden,
     },
     livereload: {
       disable: opts.noLivereload,
     },
+  })
+
+  // stop server and exit cleanly on ^C
+  process.on('SIGINT', () => {
+    opts.quiet || console.log(" stopping server")
+    server.close() // stop accepting new connections
+    // give ongoing requests a short time to finish processing
+    setTimeout(() => process.exit(0), 500).unref()
   })
 }
 

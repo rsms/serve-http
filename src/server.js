@@ -46,7 +46,7 @@ export function createServer(opts) {
   }
 
   let handler = formHandlerChain([
-    (opts.logRequests && !opts.quiet) && requestLogger(),
+    !opts.quiet && requestLogger(),
     handleRequest,
   ])
 
@@ -57,10 +57,6 @@ export function createServer(opts) {
 
   server = createHttpServer(handler2)
   server.options = opts
-
-  if (!opts.quiet) {
-    log = function() { console.log(fmt.apply(null, arguments)) }
-  }
 
   server.localOnly = true
   if (opts.host != "localhost" && opts.host != "127.0.0.1" && opts.host != "::1") {
@@ -90,7 +86,7 @@ export function createServer(opts) {
       startLivereloadServer(lrport, opts.host)
     }
 
-    if (!opts.quiet) {
+    if (opts.showServingMessage) {
       let dir = Path.relative(".", pubdir)
       if (dir[0] != ".") {
         dir = "./" + dir
@@ -104,15 +100,12 @@ export function createServer(opts) {
         }
       }
       let lrmsg = lrport ? ` (livereload on :${lrport})` : ""
-      log(
+      console.log(
         `serving %s%s at %s/${lrmsg}`,
         dir,
         server.localOnly ? "" : " PUBLICLY TO THE INTERNET",
         addrToURL(addr)
       )
-    } else if (!opts.port) {
-      // print auto-assigned port when quiet
-      console.log(addr.port)
     }
 
     // DEBUG && setTimeout(() => {
@@ -124,6 +117,11 @@ export function createServer(opts) {
     //     console.log("body:", body.toString("utf8"))
     //   })
     // }, 100)
+  })
+
+  server.once("close", () => {
+    if (livereloadServer)
+      livereloadServer.close()
   })
 
   return server
