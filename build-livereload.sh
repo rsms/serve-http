@@ -9,7 +9,7 @@ TMPFILE=build/livereload.min.js
 OUTFILE=build/livereload-script.js
 
 if [ $OUTFILE -nt "$SRCFILE" ]; then
-  echo "$SRCFILE up to date"
+  echo "$OUTFILE up to date"
   exit
 fi
 
