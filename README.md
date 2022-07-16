@@ -4,9 +4,8 @@ Simple single-file local web server
 
 `npm i -g serve-http`
 
-- Single file — copy it into your project
-- No dependencies
-- Livereload
+- Single file without dependencies — copy it into your project.
+- Livereload — HTML pages reload automatically in web browsers as they change.
 - Safety feature: Only serves local connections unless given explicit command-line argument.
 - Safety feature: Refuses to serve directories outside home directory to remote connections.
 
@@ -16,7 +15,7 @@ into your project (no dependencies; entire thing contained in a single small fil
 
 ```
 $ ./serve-http -help
-Usage: ./serve-http [options] [<dir>]
+Usage: serve-http [options] [<dir>]
 
 <dir>
   Directory to serve files from. Defaults to the current directory.
@@ -25,21 +24,22 @@ Options:
   -p, -port <port>  Listen on specific <port>
   -host <host>      Bind to <host> instead of "localhost"
   -public           Accept connections from anywhere (same as -host "")
-  -quiet            Disable request logging
+  -q, -quiet        Don't log requests
   -no-livereload    Disable livereload
   -no-dirlist       Disable directory listing
+  -dirlist-hidden   Show files beginning with "." in directory listings
   -h, -help         Show help and exit
   -version          Print version to stdout and exit
 
 Examples:
 
-  ./serve-http
+  serve-http
     Serve current directory on some available port
 
-  ./serve-http -p 8080 docs
+  serve-http -p 8080 docs
     Serve directory ./docs locally on port 8080
 
-  ./serve-http -public -no-dirlist
+  serve-http -public -no-dirlist
     Serve current directory publicly on some available port,
     without directory listing.
 
