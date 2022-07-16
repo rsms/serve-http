@@ -23,7 +23,7 @@ export function die(err) {
 
 export function addrToURL(addr) {
   let host = addr.address
-  if (host == "127.0.0.1") {
+  if (host == "127.0.0.1" || host == "::1") {
     host = "localhost"
   } else if (host == "::" || host == "0.0.0.0" || host == "") {
     host = netInterfaceAddr(4) || "0.0.0.0"
