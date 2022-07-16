@@ -1,6 +1,6 @@
 {
   "name": "serve-http",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Simple single-file local web server with livereload",
   "bin": {
     "serve-http": "serve-http.js"
@@ -15,8 +15,11 @@
     "serve-http.d.ts"
   ],
   "scripts": {
-    "build": "./build.sh",
-    "dev": "./build.sh -w"
+    "build_old": "./build.sh",
+    "dev_old": "./build.sh -w",
+    "build": "sh build-livereload.sh && esbuild --define:DEBUG=false --define:WITH_LIVERELOAD=true --define:VERSION=$(node -p 'JSON.stringify(require(\"./package.json\").version)') --minify --bundle --platform=node --target=node14 --sourcemap --sources-content=false --banner:js='#!/usr/bin/env node' --outfile=serve-http.js src/main.js && chmod +x serve-http.js",
+    "build-dev": "sh build-livereload.sh && esbuild --define:DEBUG=true --define:WITH_LIVERELOAD=true --define:VERSION=$(node -p 'JSON.stringify(require(\"./package.json\").version)') --bundle --platform=node --target=node14 --sourcemap --sources-content=false --banner:js='#!/usr/bin/env node\ntry { require(\"source-map-support\").install() }catch(_){};' --outfile=serve-http.js src/main.js && chmod +x serve-http.js",
+    "build-dev-watch": "sh build-livereload.sh && esbuild --watch --define:DEBUG=true --define:WITH_LIVERELOAD=true --define:VERSION=$(node -p 'JSON.stringify(require(\"./package.json\").version)') --bundle --platform=node --target=node14 --sourcemap --sources-content=false --banner:js='#!/usr/bin/env node\ntry { require(\"source-map-support\").install() }catch(_){};' --outfile=serve-http.js src/main.js && chmod +x serve-http.js"
   },
   "author": "Rasmus Andersson <https://rsms.me/>",
   "homepage": "https://github.com/rsms/serve-http/",
@@ -25,13 +28,11 @@
     "url": "git+https://github.com/rsms/serve-http.git"
   },
   "license": "MIT",
+  "optionalDependencies": {
+    "source-map-support": "^0.5.21"
+  },
   "devDependencies": {
-    "google-closure-compiler": "^20200517.0.0",
-    "livereload": "^0.9.1",
-    "rollup": "^1.27.5",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "source-map-support": "^0.5.16",
-    "terser": "^4.4.0"
+    "esbuild": "^0.14.49",
+    "livereload": "^0.9.3"
   }
 }
